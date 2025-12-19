@@ -116,20 +116,6 @@ TaskScope/
 └── TaskScope.png       # App icon
 ```
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open a Pull Request
-
----
-
 ## 📄 License
 
 MIT License - feel free to use this project for personal or commercial purposes.
