@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskScope</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: linear-gradient(135deg, #0f0f1a 0%, #1a1025 50%, #0d1117 100%); }
+        .glass { background: rgba(15, 15, 25, 0.6); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-light { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+        .glow-cyan { box-shadow: 0 0 30px rgba(34, 211, 238, 0.12); }
+        .glow-purple { box-shadow: 0 0 30px rgba(168, 85, 247, 0.12); }
+        .glow-amber { box-shadow: 0 0 30px rgba(245, 158, 11, 0.12); }
+        .glow-green { box-shadow: 0 0 30px rgba(34, 197, 94, 0.12); }
+        
+        /* Progress Ring - CSS only */
+        .progress-ring {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: conic-gradient(var(--color) calc(var(--pct) * 1%), rgba(255,255,255,0.05) 0);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .progress-ring::before {
+            content: '';
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: #0f0f1a;
+        }
+        
+        /* Remove all selection/focus effects */
+        * { outline: none !important; -webkit-tap-highlight-color: transparent !important; -webkit-focus-ring-color: transparent !important; }
+        *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
+        svg, svg * { outline: none !important; pointer-events: none; }
+        ::selection { background: transparent; }
+        ::-moz-selection { background: transparent; }
+        .ring-bg { stroke: rgba(255,255,255,0.03); }
+        .ring-fill { stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+        
+        /* Sidebar */
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item:hover { background: rgba(99, 102, 241, 0.15); transform: translateX(2px); }
+        .nav-item.active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.25), transparent); border-left: 3px solid #818cf8; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        
+        /* Animations */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-up { animation: fadeUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Sparkline - better looking */
+        .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 100%; padding: 4px 0; }
+        .spark-bar { flex: 1; border-radius: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); min-width: 3px; opacity: 0.9; }
+        .spark-bar:hover { opacity: 1; transform: scaleY(1.1); }
+        
+        /* Cards */
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.12); }
+        
+        /* Progress bars */
+        .progress-bar { position: relative; overflow: hidden; }
+        .progress-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); animation: shimmer 2s infinite; }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    </style>
+</head>
+<body class="text-white h-screen overflow-hidden flex">
+    <!-- Sidebar -->
+    <aside class="w-14 lg:w-48 flex-shrink-0 glass flex flex-col">
+        <div class="h-14 flex items-center justify-center lg:justify-start lg:px-4 border-b border-white/5">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <span class="hidden lg:block ml-3 font-semibold">TaskScope</span>
+        </div>
+        <nav class="flex-1 py-3 px-2 space-y-1">
+            <button onclick="showTab('dashboard')" id="nav-dashboard" class="nav-item active w-full h-10 flex items-center justify-center lg:justify-start lg:px-3 rounded-lg">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span class="hidden lg:block ml-3 text-sm">Dashboard</span>
+            </button>
+            <button onclick="showTab('cpu')" id="nav-cpu" class="nav-item w-full h-10 flex items-center justify-center lg:justify-start lg:px-3 rounded-lg">
+                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+                <span class="hidden lg:block ml-3 text-sm">CPU</span>
+            </button>
+            <button onclick="showTab('memory')" id="nav-memory" class="nav-item w-full h-10 flex items-center justify-center lg:justify-start lg:px-3 rounded-lg">
+                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span class="hidden lg:block ml-3 text-sm">Memory</span>
+            </button>
+            <button onclick="showTab('storage')" id="nav-storage" class="nav-item w-full h-10 flex items-center justify-center lg:justify-start lg:px-3 rounded-lg">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h8"/></svg>
+                <span class="hidden lg:block ml-3 text-sm">Storage</span>
+            </button>
+            <button onclick="showTab('network')" id="nav-network" class="nav-item w-full h-10 flex items-center justify-center lg:justify-start lg:px-3 rounded-lg">
+                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
+                <span class="hidden lg:block ml-3 text-sm">Network</span>
+            </button>
+            <button onclick="showTab('processes')" id="nav-processes" class="nav-item w-full h-10 flex items-center justify-center lg:justify-start lg:px-3 rounded-lg">
+                <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span class="hidden lg:block ml-3 text-sm">Processes</span>
+            </button>
+        </nav>
+        <div class="p-2 border-t border-white/5">
+            <div id="battery-widget" class="hidden glass rounded-lg p-2 text-center">
+                <div class="text-xs text-gray-400">Battery</div>
+                <div id="battery-pct" class="text-lg font-bold text-green-400">--</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="h-14 flex items-center justify-between px-4 border-b border-white/5 flex-shrink-0">
+            <div>
+                <h1 id="page-title" class="text-lg font-semibold">Dashboard</h1>
+                <p id="sys-info" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openTerminal()" class="p-2 hover:bg-white/5 rounded-lg" title="Open Terminal">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </button>
+                <button onclick="openFiles()" class="p-2 hover:bg-white/5 rounded-lg" title="Open Files">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                </button>
+                <div id="uptime" class="text-xs text-gray-500 ml-2"></div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-auto p-4">
+            <!-- Dashboard -->
+            <section id="tab-dashboard" class="tab-content space-y-5 fade-up">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- CPU Card -->
+                    <div class="card glass rounded-2xl p-5 glow-cyan">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-[11px] uppercase tracking-wider text-cyan-400/70 font-medium mb-1">CPU</p>
+                                <p id="d-cpu" class="text-3xl font-bold text-cyan-400">0%</p>
+                            </div>
+                            <div id="ring-cpu" class="progress-ring" style="--color:#22d3ee;--pct:0"></div>
+                        </div>
+                        <div id="cpu-spark" class="sparkline h-10"></div>
+                    </div>
+                    <!-- Memory Card -->
+                    <div class="card glass rounded-2xl p-5 glow-purple">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-[11px] uppercase tracking-wider text-purple-400/70 font-medium mb-1">Memory</p>
+                                <p id="d-mem" class="text-3xl font-bold text-purple-400">0%</p>
+                                <p id="d-mem-used" class="text-[11px] text-gray-500 mt-1"></p>
+                            </div>
+                            <div id="ring-mem" class="progress-ring" style="--color:#a855f7;--pct:0"></div>
+                        </div>
+                        <div id="mem-spark" class="sparkline h-10"></div>
+                    </div>
+                    <!-- Disk Card -->
+                    <div class="card glass rounded-2xl p-5 glow-amber">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-[11px] uppercase tracking-wider text-amber-400/70 font-medium mb-1">Disk</p>
+                                <p id="d-disk" class="text-3xl font-bold text-amber-400">0%</p>
+                                <p id="d-disk-io" class="text-[11px] text-gray-500 mt-1"></p>
+                            </div>
+                            <div id="ring-disk" class="progress-ring" style="--color:#f59e0b;--pct:0"></div>
+                        </div>
+                        <div id="disk-spark" class="sparkline h-10"></div>
+                    </div>
+                    <!-- Network Card -->
+                    <div class="card glass rounded-2xl p-5 glow-green">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-[11px] uppercase tracking-wider text-green-400/70 font-medium mb-1">Network</p>
+                                <p id="d-net" class="text-xl font-bold text-green-400">0 B/s</p>
+                                <p id="d-net-up" class="text-[11px] text-gray-500 mt-1"></p>
+                            </div>
+                            <div class="text-right space-y-1">
+                                <div class="text-xs text-green-400">↓ <span id="d-net-dl">0</span></div>
+                                <div class="text-xs text-rose-400">↑ <span id="d-net-ul">0</span></div>
+                            </div>
+                        </div>
+                        <div id="net-spark" class="sparkline h-10"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="card glass rounded-2xl p-5">
+                        <h3 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">Top Processes</h3>
+                        <div id="top-procs" class="space-y-2"></div>
+                    </div>
+                    <div class="card glass rounded-2xl p-5">
+                        <h3 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">System</h3>
+                        <div id="sys-details" class="space-y-3 text-sm"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CPU Tab -->
+            <section id="tab-cpu" class="tab-content hidden space-y-5 fade-up">
+                <div class="card glass rounded-2xl p-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <p id="cpu-model" class="text-sm text-gray-400 mb-2"></p>
+                            <p class="text-5xl font-bold text-cyan-400"><span id="cpu-pct">0</span><span class="text-2xl">%</span></p>
+                        </div>
+                        <div class="text-right text-sm text-gray-400 space-y-1">
+                            <p class="glass-light rounded-lg px-3 py-1"><span id="cpu-cores">0</span> cores • <span id="cpu-threads">0</span> threads</p>
+                            <p id="cpu-freq" class="text-cyan-400"></p>
+                            <p id="cpu-temp-detail" class="text-amber-400"></p>
+                        </div>
+                    </div>
+                    <div id="cpu-main-spark" class="sparkline h-24 rounded-xl bg-white/[0.02] p-2"></div>
+                </div>
+                <div class="card glass rounded-2xl p-5">
+                    <h3 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">Per Core Usage</h3>
+                    <div id="cores-grid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3"></div>
+                </div>
+                <div class="card glass rounded-2xl p-5">
+                    <h3 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-3">Load Average</h3>
+                    <div id="load-avg" class="flex gap-3 text-sm"></div>
+                </div>
+            </section>
+
+            <!-- Memory Tab -->
+            <section id="tab-memory" class="tab-content hidden space-y-5 fade-up">
+                <div class="card glass rounded-2xl p-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-2">Memory Usage</p>
+                            <p class="text-5xl font-bold text-purple-400"><span id="mem-pct">0</span><span class="text-2xl">%</span></p>
+                        </div>
+                        <div class="text-right text-sm space-y-1">
+                            <p class="text-gray-300"><span id="mem-used">0</span> / <span id="mem-total">0</span></p>
+                            <p class="text-gray-500">Available: <span id="mem-avail" class="text-green-400">0</span></p>
+                        </div>
+                    </div>
+                    <div class="h-5 bg-white/5 rounded-full overflow-hidden flex progress-bar mb-3">
+                        <div id="mem-bar-used" class="bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-500"></div>
+                        <div id="mem-bar-cached" class="bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500"></div>
+                    </div>
+                    <div class="flex gap-6 text-xs text-gray-400">
+                        <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-400"></span>Used</span>
+                        <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"></span>Cached</span>
+                        <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-white/10"></span>Free</span>
+                    </div>
+                    <div id="mem-main-spark" class="sparkline h-20 rounded-xl bg-white/[0.02] p-2 mt-5"></div>
+                </div>
+                <div class="card glass rounded-2xl p-5">
+                    <h3 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">Swap</h3>
+                    <div class="flex justify-between text-sm mb-3">
+                        <span class="text-gray-400">Usage</span>
+                        <span><span id="swap-used">0</span> / <span id="swap-total">0</span></span>
+                    </div>
+                    <div class="h-3 bg-white/5 rounded-full overflow-hidden progress-bar">
+                        <div id="swap-bar" class="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-500"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Storage Tab -->
+            <section id="tab-storage" class="tab-content hidden space-y-5 fade-up">
+                <div id="disk-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+            </section>
+
+            <!-- Network Tab -->
+            <section id="tab-network" class="tab-content hidden space-y-5 fade-up">
+                <div class="card glass rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-5">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-2">Total Throughput</p>
+                            <div class="flex gap-6 mt-2">
+                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span><span class="text-green-400 font-semibold">↓ <span id="net-total-dl">0</span></span></span>
+                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span><span class="text-rose-400 font-semibold">↑ <span id="net-total-ul">0</span></span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="net-main-spark" class="sparkline h-20 rounded-xl bg-white/[0.02] p-2"></div>
+                </div>
+                <div id="net-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+            </section>
+
+            <!-- Processes Tab -->
+            <section id="tab-processes" class="tab-content hidden space-y-5 fade-up">
+                <div class="card glass rounded-2xl overflow-hidden">
+                    <div class="flex gap-3 p-4 border-b border-white/5">
+                        <input type="text" id="proc-search" placeholder="Search processes..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all">
+                        <select id="proc-sort" class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm cursor-pointer hover:bg-white/[0.07] transition-all">
+                            <option value="cpu">Sort by CPU</option>
+                            <option value="memory">Sort by Memory</option>
+                            <option value="name">Sort by Name</option>
+                        </select>
+                    </div>
+                    <div class="overflow-auto max-h-[calc(100vh-240px)]">
+                        <table class="w-full text-sm">
+                            <thead class="bg-white/[0.03] sticky top-0">
+                                <tr class="text-gray-500 text-left text-xs uppercase tracking-wider">
+                                    <th class="px-4 py-3 font-medium">Process</th>
+                                    <th class="px-4 py-3 font-medium w-16">PID</th>
+                                    <th class="px-4 py-3 font-medium w-20">CPU</th>
+                                    <th class="px-4 py-3 font-medium w-24">Memory</th>
+                                    <th class="px-4 py-3 font-medium w-24">User</th>
+                                    <th class="w-12"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="proc-table" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 border-t border-white/5 text-xs text-gray-500 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        <span id="proc-count">0</span> processes running
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
