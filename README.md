@@ -31,7 +31,7 @@
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x500/1a1025/22d3ee?text=Dashboard+View" alt="Dashboard" width="100%"/>
+  <img src="screenshot.png" alt="TaskScope Dashboard" width="100%"/>
 </p>
 
 ---
